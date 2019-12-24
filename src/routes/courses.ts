@@ -5,6 +5,7 @@ const router = express.Router();
 
 import { CityDB } from '../databases';
 import { ExpressRequest } from '../index';
+import { QueryBuilder } from 'knex';
 
 const checkToken = (
   req: express.Request,
@@ -160,7 +161,11 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
   CityDB.select(fields)
     .from('new_exchange_rates')
     .where(where)
-    .andWhere('date_update', '>=', unixTime)
+    .andWhere(function() {
+      (this as QueryBuilder)
+        .where('date_update', '>=', unixTime)
+        .orWhere('day_and_night', 1);
+    })
     .orderBy(orderBy.field, orderBy.sorting)
     .then(rows => {
       // получение выгодных курсов

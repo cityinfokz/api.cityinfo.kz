@@ -13,6 +13,7 @@ import {
   UST_KAMENOGORSK,
   UST_KAMENOGORSK_OPT,
 } from '../constants/city';
+import { QueryBuilder } from 'knex';
 
 interface City {
   id: number;
@@ -272,7 +273,11 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
   CityDB.select(field, 'name', 'date_update', 'info', 'phones')
     .from('new_exchange_rates')
     .where(where)
-    .andWhere('date_update', '>=', unixTime)
+    .andWhere(function() {
+      (this as QueryBuilder)
+        .where('date_update', '>=', unixTime)
+        .orWhere('day_and_night', 1);
+    })
     .andWhere(field, '>=', 1)
     .orderBy(field, order)
     .limit(15)
