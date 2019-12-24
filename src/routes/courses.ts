@@ -181,7 +181,7 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
         // скрываем не круглосуточные пункты в городе Усть-Каменогорск
         if (
           cityId !== 4 ||
-          ((hours >= 18 || hours <= 8) && rate.day_and_night)
+          ((hours >= 20 || hours <= 8) && rate.day_and_night)
         ) {
           rates.push(rate);
         }
