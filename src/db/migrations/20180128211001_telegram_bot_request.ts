@@ -1,9 +1,9 @@
+/* eslint-disable */
 import knex from 'knex';
 
-exports.up = function (knex: knex) {
-  return knex.schema.createTable('telegram_bot_requests', function (t) {
-    t
-      .increments('id')
+exports.up = function(knex: knex) {
+  return knex.schema.createTable('telegram_bot_requests', function(t) {
+    t.increments('id')
       .unsigned()
       .primary();
     t.integer('chat_id', 10).notNullable();
@@ -13,6 +13,6 @@ exports.up = function (knex: knex) {
   });
 };
 
-exports.down = function (knex: knex) {
+exports.down = function(knex: knex) {
   return knex.schema.dropTable('telegram_bot_requests');
 };
