@@ -102,13 +102,14 @@ router.post('*', (req, res, next) => {
 });
 
 router.get('/:cityid/', (req: express.Request, res: express.Response) => {
+  const cityId = +req.params.cityid;
   const where: {
     city_id: number;
     hidden: number;
     published: number;
     deleted: number;
   } = {
-    city_id: req.params.cityid,
+    city_id: cityId,
     hidden: 0,
     published: 1,
     deleted: 0,
@@ -132,6 +133,7 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     orderBy.sorting = sorting[req.query.sortBy];
   }
   const date = new Date();
+  const hours = date.getHours();
   date.setHours(0, 0, 0, 0);
   const unixTime = Math.round(date.valueOf() / 1000);
 
@@ -168,18 +170,25 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     })
     .orderBy(orderBy.field, orderBy.sorting)
     .then(rows => {
-      // получение выгодных курсов
-      const best = getBestCourses(rows);
-      const rates = rows.map((rate: ExchangeRate) => {
+      const rates: ExchangeRate[] = [];
+      for (const rate of rows) {
         rate.name = _.unescape(rate.name);
         if (rate.phones) {
           rate.phones = (rate.phones as string)
             .split(',')
             .map(phone => phone.trim());
         }
+        // скрываем не круглосуточные пункты в городе Усть-Каменогорск
+        if (
+          cityId !== 4 ||
+          ((hours >= 18 || hours <= 8) && rate.day_and_night)
+        ) {
+          rates.push(rate);
+        }
+      }
 
-        return rate;
-      });
+      // получение выгодных курсов
+      const best = getBestCourses(rates);
 
       return res.status(200).json({ rates: rates, best: best });
     })
