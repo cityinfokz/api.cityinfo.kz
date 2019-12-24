@@ -1,4 +1,4 @@
-import express, { NextFunction, Response } from 'express';
+import express, { Request, NextFunction, Response } from 'express';
 import { createServer, Server } from 'http';
 import cors from 'cors';
 import createError from 'http-errors';
@@ -12,7 +12,7 @@ import socketIO from 'socket.io';
 
 import courses from './routes/courses';
 import telegram, { bot } from './routes/telegram';
-import { expressRequest } from './index';
+import { ExpressRequest } from './index';
 
 // initialize configuration
 dotenv.config();
@@ -28,17 +28,17 @@ const io: socketIO.Server = socketIO(server, {
 
 app.set('port', process.env.PORT);
 
-io.on('connection', function(socket) {
+io.on('connection', socket => {
   socket.on('join', room => {
     socket.join(room);
   });
 
-  socket.on('disconnect', function() {
+  socket.on('disconnect', () => {
     console.log('disconnect');
   });
 });
 
-app.use((req: expressRequest, res: Response, next: NextFunction) => {
+app.use((req: ExpressRequest, res: Response, next: NextFunction) => {
   req.io = io;
   next();
 });
@@ -76,12 +76,12 @@ app.use('/courses', courses);
 app.use('/telegram', telegram);
 
 // catch 404 and forward to error handler
-app.use(function(req, res) {
+app.use((req, res) => {
   return res.status(404).json(createError(404));
 });
 
 // error handler
-app.use(function(err: any, req: express.Request, res: express.Response) {
+app.use((err: any, req: Request, res: Response) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

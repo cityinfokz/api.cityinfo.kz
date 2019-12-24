@@ -4,13 +4,13 @@ import _ from 'lodash';
 const router = express.Router();
 
 import { CityDB } from '../databases';
-import { expressRequest } from '../index';
+import { ExpressRequest } from '../index';
 
 const checkToken = (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
-) => {
+): Response | void => {
   const token = req.headers['courses-token'];
   if (token !== process.env.COURSES_TOKEN) {
     return res.status(498).json({
@@ -26,11 +26,16 @@ interface BestCourses {
   [key: string]: number;
 }
 
+interface CityBestCourses {
+  gross: BestCourses;
+  retail: BestCourses;
+}
+
 interface Sorting {
   [key: string]: string;
 }
 
-interface exchangeRate {
+interface ExchangeRate {
   id: number;
   name: string;
   buyUSD: number;
@@ -54,8 +59,8 @@ interface exchangeRate {
 }
 
 // Расчитывает выгодные курсы покупки/продажи
-const getBestCourses = async (rates: exchangeRate[]) => {
-  let arrBestRetail: BestCourses = {
+const getBestCourses = (rates: ExchangeRate[]): CityBestCourses => {
+  const arrBestRetail: BestCourses = {
     buyUSD: 1,
     buyEUR: 1,
     buyRUB: 1,
@@ -67,10 +72,10 @@ const getBestCourses = async (rates: exchangeRate[]) => {
     sellCNY: 10000,
     sellGBP: 10000,
   };
-  let arrBestGross = { ...arrBestRetail };
-  for (let rate of rates) {
+  const arrBestGross = { ...arrBestRetail };
+  for (const rate of rates) {
     const best = rate.gross ? arrBestGross : arrBestRetail;
-    for (let key in best) {
+    for (const key in best) {
       // let rateValue = rate[key] as string);
       if (key.substr(0, 3) === 'sel') {
         if (rate[key] <= best[key] && rate[key] > 0) {
@@ -95,8 +100,8 @@ router.post('*', (req, res, next) => {
   checkToken(req, res, next);
 });
 
-router.get('/:cityid/', function(req: express.Request, res: express.Response) {
-  let where: {
+router.get('/:cityid/', (req: express.Request, res: express.Response) => {
+  const where: {
     city_id: number;
     hidden: number;
     published: number;
@@ -108,7 +113,7 @@ router.get('/:cityid/', function(req: express.Request, res: express.Response) {
     deleted: 0,
   };
 
-  let sorting: Sorting = {
+  const sorting: Sorting = {
     buyUSD: 'desc',
     buyEUR: 'desc',
     buyRUB: 'desc',
@@ -120,16 +125,16 @@ router.get('/:cityid/', function(req: express.Request, res: express.Response) {
     sellCNY: 'asc',
     sellGBP: 'asc',
   };
-  let orderBy = { field: 'date_update', sorting: 'desc' };
+  const orderBy = { field: 'date_update', sorting: 'desc' };
   if (sorting[req.query.sortBy]) {
     orderBy.field = req.query.sortBy;
     orderBy.sorting = sorting[req.query.sortBy];
   }
-  let date = new Date();
+  const date = new Date();
   date.setHours(0, 0, 0, 0);
-  let unixTime = Math.round(date.valueOf() / 1000);
+  const unixTime = Math.round(date.valueOf() / 1000);
 
-  let fields = [
+  const fields = [
     'id',
     'name',
     'buyUSD',
@@ -157,10 +162,10 @@ router.get('/:cityid/', function(req: express.Request, res: express.Response) {
     .where(where)
     .andWhere('date_update', '>=', unixTime)
     .orderBy(orderBy.field, orderBy.sorting)
-    .then(async rows => {
+    .then(rows => {
       // получение выгодных курсов
-      let best = await getBestCourses(rows);
-      const rates = rows.map((rate: exchangeRate) => {
+      const best = getBestCourses(rows);
+      const rates = rows.map((rate: ExchangeRate) => {
         rate.name = _.unescape(rate.name);
         if (rate.phones) {
           rate.phones = (rate.phones as string)
@@ -173,7 +178,7 @@ router.get('/:cityid/', function(req: express.Request, res: express.Response) {
 
       return res.status(200).json({ rates: rates, best: best });
     })
-    .catch(function(error) {
+    .catch(error => {
       console.error(error);
       return res.status(500).json({
         success: false,
@@ -182,12 +187,12 @@ router.get('/:cityid/', function(req: express.Request, res: express.Response) {
     });
 });
 
-router.post('/update/', function(req: expressRequest, res: Response) {
-  let missingFields: string[] = [];
+router.post('/update/', (req: ExpressRequest, res: Response) => {
+  const missingFields: string[] = [];
   if (req.body) {
-    let exchangeRate: exchangeRate = req.body;
-    let props = Object.keys(exchangeRate);
-    let haystack = [
+    const ExchangeRate: ExchangeRate = req.body;
+    const props = Object.keys(ExchangeRate);
+    const haystack = [
       'id',
       'name',
       'buyUSD',
@@ -212,7 +217,7 @@ router.post('/update/', function(req: expressRequest, res: Response) {
       'gross',
     ];
 
-    for (let prop of haystack) {
+    for (const prop of haystack) {
       if (props.includes(prop) && prop.length > 0) {
       } else {
         missingFields.push(prop);
@@ -220,19 +225,19 @@ router.post('/update/', function(req: expressRequest, res: Response) {
     }
 
     if (missingFields.length === 0) {
-      if (exchangeRate['phones']) {
-        exchangeRate['phones'] = (exchangeRate['phones'] as string)
+      if (ExchangeRate['phones']) {
+        ExchangeRate['phones'] = (ExchangeRate['phones'] as string)
           .split(',')
           .map(phone => phone.trim());
       }
-      req.io.to(`${exchangeRate['city_id']}`).emit('update', exchangeRate);
+      req.io.to(`${ExchangeRate['city_id']}`).emit('update', ExchangeRate);
 
       return res.status(200).json({
         success: true,
       });
     }
   }
-  let response: {
+  const response: {
     error: string;
     missingFields?: string[];
   } = {

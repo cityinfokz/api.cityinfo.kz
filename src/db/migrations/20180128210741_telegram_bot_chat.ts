@@ -1,3 +1,4 @@
+/* eslint-disable */
 import knex from 'knex';
 
 exports.up = function(knex: knex) {

@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { Server } from 'socket.io';
 
-declare interface expressRequest extends Request {
+declare interface ExpressRequest extends Request {
   io?: Server;
 }

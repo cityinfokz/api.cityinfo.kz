@@ -2,18 +2,7 @@ import app from './app';
 import { server } from './app';
 import { HttpError } from 'http-errors';
 
-/**
- * Start Express server.
- */
-server.listen(app.get('port'));
-server.on('error', onError);
-server.on('listening', onListening);
-// io.on('connection', (socket) => {
-//   socket.on('connect', () => console.log('Client connected'));
-//   socket.on('disconnect', () => console.log('Client disconnected'));
-// });
-
-function onError(error: HttpError) {
+const onError = (error: HttpError): void => {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -33,12 +22,19 @@ function onError(error: HttpError) {
     default:
       throw error;
   }
-}
+};
 
-function onListening() {
+const onListening = (): void => {
   const addr = server.address();
-  let bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   console.log('Listening on ' + bind);
-}
+};
+
+/**
+ * Start Express server.
+ */
+server.listen(app.get('port'));
+server.on('error', onError);
+server.on('listening', onListening);
 
 export default server;
