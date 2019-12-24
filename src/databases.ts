@@ -24,6 +24,7 @@ export const CityDBConfig = {
     database: process.env.CITY_DB_NAME,
     user: process.env.CITY_DB_USER,
     password: process.env.CITY_DB_PASS,
+    decimalNumbers: true,
   },
 };
 
