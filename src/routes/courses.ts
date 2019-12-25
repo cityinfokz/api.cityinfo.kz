@@ -6,6 +6,7 @@ const router = express.Router();
 import { CityDB } from '../databases';
 import { ExpressRequest } from '../index';
 import { QueryBuilder } from 'knex';
+import { currencyFields } from '../constants/currency';
 
 const checkToken = (
   req: express.Request,
@@ -140,16 +141,7 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
   const fields = [
     'id',
     'name',
-    'buyUSD',
-    'sellUSD',
-    'buyEUR',
-    'sellEUR',
-    'buyRUB',
-    'sellRUB',
-    'buyCNY',
-    'sellCNY',
-    'buyGBP',
-    'sellGBP',
+    ...currencyFields,
     'info',
     'phones',
     'date_update',
@@ -208,16 +200,7 @@ router.post('/update/', (req: ExpressRequest, res: Response) => {
     const haystack = [
       'id',
       'name',
-      'buyUSD',
-      'sellUSD',
-      'buyEUR',
-      'sellEUR',
-      'buyRUB',
-      'sellRUB',
-      'buyCNY',
-      'sellCNY',
-      'buyGBP',
-      'sellGBP',
+      ...currencyFields,
       'info',
       'phones',
       'date_update',
