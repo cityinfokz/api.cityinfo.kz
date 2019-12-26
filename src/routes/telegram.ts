@@ -256,6 +256,7 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
     saveRequest(ctx, field, name);
   }
   const date = new Date();
+  const hours = date.getHours();
   date.setHours(0, 0, 0, 0);
   const unixTime = Math.round(date.valueOf() / 1000);
 
@@ -270,7 +271,7 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
   if (field.substr(0, 3) === 'buy') {
     order = 'DESC';
   }
-  CityDB.select(field, 'name', 'date_update', 'info', 'phones')
+  CityDB.select(field, 'name', 'date_update', 'info', 'phones', 'day_and_night')
     .from('new_exchange_rates')
     .where(where)
     .andWhere(function() {
@@ -281,30 +282,39 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
     .andWhere(field, '>=', 1)
     .orderBy(field, order)
     .limit(15)
-    .then(rates => {
+    .then(rows => {
       const responseText =
         '<b>Выгодные курсы</b> обмена валют <b>(ВЫГОДНЫЕ СВЕРХУ)</b>:\n\n\r';
       let responseCoursesText = '';
-      _.forEach(rates, value => {
-        const date = new Date(value.date_update * 1000);
-        const hours = date.getHours();
-        const year = date.getFullYear();
-        const day = formatDate(date.getDate());
-        const month = formatDate(date.getMonth() + 1);
-        const minutes = formatDate(date.getMinutes());
-        responseCoursesText +=
-          `<b>${_.unescape(value.name)}</b>\n\r` +
-          `${messageText} = <b>${value[field]} KZT</b>\n\r` +
-          `<b>Время обновления:</b> ${day}.${month}.${year} ${hours}:${minutes}\n\r`;
-        if (value.phones) {
+      for (const rate of rows) {
+        // скрываем не круглосуточные пункты в городе Усть-Каменогорск
+        if (
+          !(
+            userCityId === 4 &&
+            (hours >= 20 || hours < 8) &&
+            !rate.day_and_night
+          )
+        ) {
+          const date = new Date(rate.date_update * 1000);
+          const hours = date.getHours();
+          const year = date.getFullYear();
+          const day = formatDate(date.getDate());
+          const month = formatDate(date.getMonth() + 1);
+          const minutes = formatDate(date.getMinutes());
           responseCoursesText +=
-            `<b>Телефоны:</b> ${value.phones}\n\r` +
-            `<b>Адрес:</b> ${value.info}\n\r`;
-        } else {
-          responseCoursesText += `<b>Информация:</b> ${value.info}\n\r`;
+            `<b>${_.unescape(rate.name)}</b>\n\r` +
+            `${messageText} = <b>${rate[field]} KZT</b>\n\r` +
+            `<b>Время обновления:</b> ${day}.${month}.${year} ${hours}:${minutes}\n\r`;
+          if (rate.phones) {
+            responseCoursesText +=
+              `<b>Телефоны:</b> ${rate.phones}\n\r` +
+              `<b>Адрес:</b> ${rate.info}\n\r`;
+          } else {
+            responseCoursesText += `<b>Информация:</b> ${rate.info}\n\r`;
+          }
+          responseCoursesText += '\n\r';
         }
-        responseCoursesText += '\n\r';
-      });
+      }
       const url = getCityUrlById(userCityId);
       let replyText: string;
       if (responseCoursesText === '') {
