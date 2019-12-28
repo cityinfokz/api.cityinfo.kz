@@ -220,7 +220,6 @@ router.post('/update/', (req: ExpressRequest, res: Response) => {
         'company_id',
         'city_id',
         'gross',
-        'atms',
       ];
 
       for (const prop of haystack) {
