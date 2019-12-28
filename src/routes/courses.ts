@@ -56,6 +56,7 @@ interface ExchangeRate {
   published: number;
   city_id: number;
   gross: boolean;
+  atms: string | null;
 
   [key: string]: number | string | string[] | boolean;
 }
@@ -151,6 +152,7 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     'latitude',
     'company_id',
     'gross',
+    'atms',
   ];
   CityDB.select(fields)
     .from('new_exchange_rates')
@@ -194,52 +196,57 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
 
 router.post('/update/', (req: ExpressRequest, res: Response) => {
   const missingFields: string[] = [];
-  if (req.body) {
-    const ExchangeRate: ExchangeRate = req.body;
-    const props = Object.keys(ExchangeRate);
-    const haystack = [
-      'id',
-      'name',
-      ...currencyFields,
-      'info',
-      'phones',
-      'date_update',
-      'day_and_night',
-      'published',
-      'longitude',
-      'latitude',
-      'company_id',
-      'city_id',
-      'gross',
-    ];
-
-    for (const prop of haystack) {
-      if (props.includes(prop) && prop.length > 0) {
-      } else {
-        missingFields.push(prop);
-      }
-    }
-
-    if (missingFields.length === 0) {
-      if (ExchangeRate['phones']) {
-        ExchangeRate['phones'] = (ExchangeRate['phones'] as string)
-          .split(',')
-          .map(phone => phone.trim());
-      }
-      req.io.to(`${ExchangeRate['city_id']}`).emit('update', ExchangeRate);
-
-      return res.status(200).json({
-        success: true,
-      });
-    }
-  }
   const response: {
     error: string;
     missingFields?: string[];
   } = {
     error: 'All parameters are required',
   };
+  try {
+    if (req.body) {
+      const ExchangeRate: ExchangeRate = req.body;
+      const props = Object.keys(ExchangeRate);
+      const haystack = [
+        'id',
+        'name',
+        ...currencyFields,
+        'info',
+        'phones',
+        'date_update',
+        'day_and_night',
+        'published',
+        'longitude',
+        'latitude',
+        'company_id',
+        'city_id',
+        'gross',
+        'atms',
+      ];
 
+      for (const prop of haystack) {
+        if (props.includes(prop) && prop.length > 0) {
+        } else {
+          missingFields.push(prop);
+        }
+      }
+
+      if (missingFields.length === 0) {
+        if (ExchangeRate['phones']) {
+          ExchangeRate['phones'] = (ExchangeRate['phones'] as string)
+            .split(',')
+            .map(phone => phone.trim());
+        }
+        req.io.to(`${ExchangeRate['city_id']}`).emit('update', ExchangeRate);
+
+        return res.status(200).json({
+          success: true,
+        });
+      }
+    }
+  } catch (e) {
+    response.error = 'Internal server error';
+    console.log(e);
+  }
   if (missingFields.length > 0) {
     response.missingFields = missingFields;
   }
