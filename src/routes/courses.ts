@@ -134,10 +134,13 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     orderBy.field = req.query.sortBy;
     orderBy.sorting = sorting[req.query.sortBy];
   }
-  const date = new Date();
-  const hours = date.getHours();
-  date.setHours(0, 0, 0, 0);
-  const unixTime = Math.round(date.valueOf() / 1000);
+  const currentDate = new Date();
+  const previousDate = new Date();
+  const hours = currentDate.getHours();
+  currentDate.setHours(0, 0, 0, 0);
+  previousDate.setDate(currentDate.getDate() - 1);
+  const currentDateTime = Math.round(currentDate.valueOf() / 1000);
+  const previousDateTime = Math.round(previousDate.valueOf() / 1000);
 
   const fields = [
     'id',
@@ -159,8 +162,12 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     .where(where)
     .andWhere(function() {
       (this as QueryBuilder)
-        .where('date_update', '>=', unixTime)
-        .orWhere('day_and_night', 1);
+        .where('date_update', '>=', currentDateTime)
+        .orWhere(function() {
+          (this as QueryBuilder)
+            .where('date_update', '>=', previousDateTime)
+            .andWhere('day_and_night', 1);
+        });
     })
     .orderBy(orderBy.field, orderBy.sorting)
     .then(rows => {
