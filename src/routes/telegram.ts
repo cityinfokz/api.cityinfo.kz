@@ -255,10 +255,14 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
     const name = await getCityNameById(userCityId);
     saveRequest(ctx, field, name);
   }
-  const date = new Date();
-  const hours = date.getHours();
-  date.setHours(0, 0, 0, 0);
-  const unixTime = Math.round(date.valueOf() / 1000);
+  // todo remove duplicated code fragment
+  const currentDate = new Date();
+  const previousDate = new Date();
+  const hours = currentDate.getHours();
+  currentDate.setHours(0, 0, 0, 0);
+  previousDate.setDate(currentDate.getDate() - 1);
+  const currentDateTime = Math.round(currentDate.valueOf() / 1000);
+  const previousDateTime = Math.round(previousDate.valueOf() / 1000);
 
   const where = {
     city_id: userCityId,
@@ -276,8 +280,12 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
     .where(where)
     .andWhere(function() {
       (this as QueryBuilder)
-        .where('date_update', '>=', unixTime)
-        .orWhere('day_and_night', 1);
+        .where('date_update', '>=', currentDateTime)
+        .orWhere(function() {
+          (this as QueryBuilder)
+            .where('date_update', '>=', previousDateTime)
+            .andWhere('day_and_night', 1);
+        });
     })
     .andWhere(field, '>=', 1)
     .orderBy(field, order)
