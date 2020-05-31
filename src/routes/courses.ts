@@ -103,7 +103,7 @@ router.post('*', (req, res, next) => {
   checkToken(req, res, next);
 });
 
-router.get('/:cityid/', (req: express.Request, res: express.Response) => {
+router.get('/:cityid/', async (req: express.Request, res: express.Response) => {
   const cityId = +req.params.cityid;
   const where: {
     city_id: number;
@@ -157,48 +157,51 @@ router.get('/:cityid/', (req: express.Request, res: express.Response) => {
     'gross',
     'atms',
   ];
-  CityDB.select(fields)
-    .from('new_exchange_rates')
-    .where(where)
-    .andWhere(function() {
-      (this as QueryBuilder)
-        .where('date_update', '>=', currentDateTime)
-        .orWhere(function() {
-          (this as QueryBuilder)
-            .where('date_update', '>=', previousDateTime)
-            .andWhere('day_and_night', 1);
-        });
-    })
-    .orderBy(orderBy.field, orderBy.sorting)
-    .then(rows => {
-      const rates: ExchangeRate[] = [];
-      for (const rate of rows) {
-        rate.name = _.unescape(rate.name);
-        if (rate.phones) {
-          rate.phones = (rate.phones as string)
-            .split(',')
-            .map(phone => phone.trim());
-        }
-        // скрываем не круглосуточные пункты в городе Усть-Каменогорск
-        if (
-          !(cityId === 4 && (hours >= 20 || hours < 8) && !rate.day_and_night)
-        ) {
-          rates.push(rate);
-        }
+  try {
+    const ratesRows = await CityDB.select(fields)
+      .from('new_exchange_rates')
+      .where(where)
+      .andWhere(function() {
+        (this as QueryBuilder)
+          .where('date_update', '>=', currentDateTime)
+          .orWhere(function() {
+            (this as QueryBuilder)
+              .where('date_update', '>=', previousDateTime)
+              .andWhere('day_and_night', 1);
+          });
+      })
+      .orderBy(orderBy.field, orderBy.sorting);
+
+    const nbRates = await CityDB.select(['code', 'value'])
+      .from('new_nbRates')
+      .whereIn('code', ['USD', 'EUR', 'RUB', 'CNY', 'GBP']);
+
+    const rates: ExchangeRate[] = [];
+    for (const rate of ratesRows) {
+      rate.name = _.unescape(rate.name);
+      if (rate.phones) {
+        rate.phones = (rate.phones as string)
+          .split(',')
+          .map(phone => phone.trim());
       }
+      // скрываем не круглосуточные пункты в городе Усть-Каменогорск
+      if (
+        !(cityId === 4 && (hours >= 20 || hours < 8) && !rate.day_and_night)
+      ) {
+        rates.push(rate);
+      }
+    }
 
-      // получение выгодных курсов
-      const best = getBestCourses(rates);
-
-      return res.status(200).json({ rates: rates, best: best });
-    })
-    .catch(error => {
-      console.error(error);
-      return res.status(500).json({
-        success: false,
-        message: 'Server error, please contact to administrator.',
-      });
+    // получение выгодных курсов
+    const best = getBestCourses(rates);
+    return res.status(200).json({ rates: rates, best: best, nbRates });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error, please contact to administrator.',
     });
+  }
 });
 
 router.post('/update/', (req: ExpressRequest, res: Response) => {
