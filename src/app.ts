@@ -23,7 +23,7 @@ app.use(cors());
 const server: Server = createServer(app);
 const io: socketIO.Server = socketIO(server, {
   origins: process.env.SOCKET_CLIENT_ORIGIN,
-  path: '/ws',
+  path: '/websocket',
 });
 
 app.set('port', process.env.PORT);
