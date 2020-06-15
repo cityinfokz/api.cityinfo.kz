@@ -63,9 +63,7 @@ const citySelect = (ctx: ContextMessageUpdate): void => {
   ];
 
   ctx.reply(
-    'Привет, ' +
-      ctx.message.from.first_name +
-      ', для просмотра курса валют в обменных пунктах нужно выбрать город.',
+    `Привет, ${ctx.message.from.first_name}, для просмотра курса валют в обменных пунктах нужно выбрать город.`,
     Markup.keyboard(keyboard)
       .resize()
       .extra(),
