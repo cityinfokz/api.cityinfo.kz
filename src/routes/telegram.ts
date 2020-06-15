@@ -14,6 +14,7 @@ import {
   UST_KAMENOGORSK_OPT,
 } from '../constants/city';
 import { QueryBuilder } from 'knex';
+import { getDateTimeInterval } from './courses';
 
 interface City {
   id: number;
@@ -253,14 +254,8 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
     const name = await getCityNameById(userCityId);
     saveRequest(ctx, field, name);
   }
-  // todo remove duplicated code fragment
-  const currentDate = new Date();
-  const previousDate = new Date();
-  const hours = currentDate.getHours();
-  currentDate.setHours(0, 0, 0, 0);
-  previousDate.setDate(currentDate.getDate() - 1);
-  const currentDateTime = Math.round(currentDate.valueOf() / 1000);
-  const previousDateTime = Math.round(previousDate.valueOf() / 1000);
+
+  const { currentDateTime, previousDateTime, hours } = getDateTimeInterval();
 
   const where = {
     city_id: userCityId,

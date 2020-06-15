@@ -98,6 +98,24 @@ const getBestCourses = (rates: ExchangeRate[]): CityBestCourses => {
   };
 };
 
+const getDateTimeInterval = (): {
+  currentDateTime: number;
+  previousDateTime: number;
+  hours: number;
+} => {
+  const currentDate = new Date();
+  const previousDate = new Date();
+  const hours = currentDate.getHours();
+  currentDate.setHours(0, 0, 0, 0);
+  previousDate.setDate(currentDate.getDate() - 1);
+
+  return {
+    currentDateTime: Math.round(currentDate.valueOf() / 1000),
+    previousDateTime: Math.round(previousDate.valueOf() / 1000),
+    hours,
+  };
+};
+
 router.post('*', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'courses-token');
   checkToken(req, res, next);
@@ -134,13 +152,8 @@ router.get('/:cityid/', async (req: express.Request, res: express.Response) => {
     orderBy.field = req.query.sortBy;
     orderBy.sorting = sorting[req.query.sortBy];
   }
-  const currentDate = new Date();
-  const previousDate = new Date();
-  const hours = currentDate.getHours();
-  currentDate.setHours(0, 0, 0, 0);
-  previousDate.setDate(currentDate.getDate() - 1);
-  const currentDateTime = Math.round(currentDate.valueOf() / 1000);
-  const previousDateTime = Math.round(previousDate.valueOf() / 1000);
+
+  const { currentDateTime, previousDateTime, hours } = getDateTimeInterval();
 
   const fields = [
     'id',
@@ -263,4 +276,5 @@ router.post('/update/', (req: ExpressRequest, res: Response) => {
   return res.status(422).json(response);
 });
 
+export { getDateTimeInterval };
 export default router;
