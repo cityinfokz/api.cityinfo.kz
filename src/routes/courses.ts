@@ -58,7 +58,7 @@ interface ExchangeRate {
   gross: boolean;
   atms: string | null;
 
-  [key: string]: number | string | string[] | boolean;
+  [key: string]: number | string | string[] | boolean | null;
 }
 
 // Расчитывает выгодные курсы покупки/продажи
