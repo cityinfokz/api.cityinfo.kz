@@ -268,7 +268,14 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
   if (field.substr(0, 3) === 'buy') {
     order = 'DESC';
   }
-  CityDB.select(field, 'name', 'date_update', 'info', 'phones', 'day_and_night')
+  await CityDB.select(
+    field,
+    'name',
+    'date_update',
+    'info',
+    'phones',
+    'day_and_night',
+  )
     .from('new_exchange_rates')
     .where(where)
     .andWhere(function() {
@@ -327,7 +334,6 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
           '<b>(ВЫГОДНЫЕ КУРСЫ СВЕРХУ)</b>\n\r';
       }
 
-      ctx.reply('');
       ctx.replyWithHTML(
         replyText,
         Markup.inlineKeyboard([
