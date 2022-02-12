@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import Telegraf, { ContextMessageUpdate, Markup } from 'telegraf';
 import _ from 'lodash';
+import { format } from 'date-fns';
 import { ApiDB, CityDB } from '../databases';
 
 import {
@@ -34,14 +35,6 @@ const XAUEmoji = '\u{1F4B0}';
 const defaultCity: City = {
   id: 4,
   gross: 0,
-};
-
-const formatDate = (digit: number): number => {
-  if (digit < 10) {
-    return +'0' + digit;
-  }
-
-  return digit;
 };
 
 const checkToken = (req: Request, res: Response, next: NextFunction): void => {
@@ -303,16 +296,14 @@ const getCourses = async (ctx: ContextMessageUpdate): Promise<void> => {
             !rate.day_and_night
           )
         ) {
-          const date = new Date(rate.date_update * 1000);
-          const hours = date.getHours();
-          const year = date.getFullYear();
-          const day = formatDate(date.getDate());
-          const month = formatDate(date.getMonth() + 1);
-          const minutes = formatDate(date.getMinutes());
+          const updateDate = format(
+            new Date(rate.date_update * 1000),
+            'dd.MM.yyyy HH:mm',
+          );
           responseCoursesText +=
             `<b>${_.unescape(rate.name)}</b>\n\r` +
             `${messageText} = <b>${rate[field]} KZT</b>\n\r` +
-            `<b>Время обновления:</b> ${day}.${month}.${year} ${hours}:${minutes}\n\r`;
+            `<b>Время обновления:</b> ${updateDate}\n\r`;
           if (rate.phones) {
             responseCoursesText +=
               `<b>Телефоны:</b> ${rate.phones}\n\r` +
