@@ -196,6 +196,8 @@ router.get('/:cityid/', async (req: express.Request, res: express.Response) => {
         rate.phones = (rate.phones as string)
           .split(',')
           .map(phone => phone.trim());
+      } else {
+        rate.phones = [];
       }
       // скрываем не круглосуточные пункты в городе Усть-Каменогорск
       if (
@@ -257,6 +259,8 @@ router.post('/update/', (req: ExpressRequest, res: Response) => {
           ExchangeRate['phones'] = (ExchangeRate['phones'] as string)
             .split(',')
             .map(phone => phone.trim());
+        } else {
+          ExchangeRate['phones'] = [];
         }
         req.io.to(`${ExchangeRate['city_id']}`).emit('update', ExchangeRate);
 
